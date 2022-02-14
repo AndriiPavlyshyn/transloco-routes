@@ -1,27 +1,100 @@
-# TranslocoRoutes
+# How to implement
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 13.2.3.
+1. Install transloco `npm i @ngneat/transloco`
+2. Add translate (`app/services/translate-service`) service to your project
+3. In `app.component.html` wrap `<router-outlet>` in wrapper and add `[dir]="dir"`, this param will change direction of app **(rtl or ltr)**
 
-## Development server
+`app.component.html`
+```
+<div class="page-wrapper" [dir]="dir">
+  <router-outlet></router-outlet>
+</div>
+```
+`app.component.ts`
+```
+private dirSub!: Subscription;
+  public dir!: string ;
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+  constructor(
+    private cdr: ChangeDetectorRef,
+    private translateService: TranslateService
+  ) { }
 
-## Code scaffolding
+  ngAfterViewInit(): void {
+    this.dirSub = this.translateService.direction$
+      .subscribe((dir: string) => {
+        this.dir = dir;
+        this.cdr.detectChanges();
+      })
+  }
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+  ngOnDestroy(): void {
+    if(this.dirSub) {
+      this.dirSub.unsubscribe();
+    }
+  }
+```
 
-## Build
+4. In `app-routing.module.ts`
+### Have children routes?
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+if you have children routes create const `children`
+```
+const children: Route[] = [
+  // { path: '', redirectTo: '/detail', pathMatch: 'full' },
+  { path: 'test', component: HomeComponent }
+]
+```
+Parent routes it's a language keys like `en` or `ru`, `uk` and so one. For children we use our ``children`` const, because it need to be the same. But for example if you don't need some page translate, you can create it's own children routes.
 
-## Running unit tests
+Parent route have to use parent component. **( like a wrapper for all page components )**
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+If script will not find app language in local storage - it will set english by default.
 
-## Running end-to-end tests
+**Routes:**
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+```
+const routes: Routes = [
+  {
+    path: 'en',
+    component: HomeComponent,
+    children: children
+  },
+  {
+    path: 'ar',
+    component: HomeComponent,
+    children: children,
+  },
+  { path: '**', redirectTo: localStorage.getItem('app-lang') || 'en' },
+];
+```
 
-## Further help
+5. In parent component **( In example it's HomeComponent )** init the `setAppLang(this.route)` methode from `translate-service` where **this.route** is ``ActivatedRoute``
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+## Service Methods
+
+`setLanguage(lang: string): void` - switch language by param ( lang key )
+
+---
+
+`switchLang(lang: string, route?: string): void`
+
+**Params**:
+
+1. **lang: string** - language key
+2. **route: route?: string** - if you need to go to children route, please set this route as second param.
+
+**Example**:
+
+``translateService.switchLang('en', 'test')`` will navigate you to `/en/test`
+
+---
+
+`setAppLang(route: ActivatedRoute): void` - created to set app lang by default, by default use it only in app parent component.
+
+--- 
+
+`setBrowserLang(): void` - set browser's language as app language, if it exists in list of supported languages.
+
+
+
