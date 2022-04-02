@@ -1,21 +1,25 @@
 import { Injectable } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { getBrowserLang, TranslocoService } from '@ngneat/transloco';
-import { BehaviorSubject, Subject } from 'rxjs';
+import { TranslocoLocaleService } from '@ngneat/transloco-locale';
+import { BehaviorSubject } from 'rxjs';
+
+export type Direction = 'rtl' | 'ltr';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TranslateService {
-  private activeLang$ = new BehaviorSubject<string | null>(this.getLocalStorLang());
-  public direction$ = new Subject<string>();
+  private readonly rtlLangs: string[] = ['ar', 'an', 'he', 'dv', 'ku', 'kur', 'fa', 'per', 'ur', 'urd'];
+  private readonly storedLang: string = this.getLocalStorLang();
+
+  public activeLang$: BehaviorSubject<string> = new BehaviorSubject('ltr');
 
   constructor(
     private translocoService: TranslocoService,
+    private translocoLocale: TranslocoLocaleService,
     private router: Router
-  ) {
-    this.checkDir();
-  }
+  ) {}
 
   public setLanguage(lang: string): void {
     this.activeLang$.next(lang);
@@ -25,63 +29,70 @@ export class TranslateService {
 
   public switchLang(lang: string, route?: string): void {
     this.setLanguage(lang);
+    this.translocoLocale.setLocale(lang);
 
     if(route) {
-      this.router.navigate([lang, route]);
+      this.router.navigate([lang, route], { queryParamsHandling: 'preserve' });
     } else {
-      this.router.navigate([lang]);
+      this.router.navigate([lang], { queryParamsHandling: 'preserve' });
     }
   }
 
   // * IMPORTANT: Setting app language on init
   // * USE IT IN PARENT ROUTE COMPONENT ( PAGE )
   public setAppLang(route: ActivatedRoute): void {
-    const urlArray = route.snapshot.url;
+    const activeLang: string = route.routeConfig?.path!;
 
-    if(urlArray.length > 0) {
-      // If has param in url - set
-      const langParam: string = urlArray[0].path;
-
-      if(langParam) {
-        this.setLanguage(langParam);
-      } else {
-        this.setBrowserLang();
+    if(activeLang === '') {
+      if(!this.storedLang) {
+        this.switchLang('en');
+        return;
       }
 
-      this.checkDir();
+      if(this.storedLang) {
+        this.switchLang(this.storedLang);
+      }
+    }
+
+    if(activeLang !== '') {
+      if(activeLang) {
+        this.setLanguage(activeLang);
+      } else {
+        this.setStoredLang();
+      }
     }
   }
 
-  public setBrowserLang(): void {
+  public getDir(activeLang: string): Direction {
+    if(this.rtlLangs.includes(activeLang)) {
+      return 'rtl';
+    } else {
+      return 'ltr';
+    }
+  }
+
+  private setStoredLang(): void {
     const browserLang: string | undefined = getBrowserLang();
     const existingLangs: any | string[] = this.translocoService.getAvailableLangs();
 
+    // If no local lang, try to set browser lang if it exists
     if(existingLangs.includes(browserLang) && browserLang) {
       this.setLanguage(browserLang);
-    } else {
-      this.setLocalStorLang('en');
-      this.router.navigate(['en']);
+      return;
     }
-  }
 
-  public checkDir(): void {
-    const rtlLangs = ['ar', 'an', 'he', 'dv', 'ku', 'kur', 'fa', 'per', 'ur', 'urd'];
-
-    this.activeLang$
-      .subscribe((lang: string | null) => {
-        if(lang && rtlLangs.includes(lang)) {
-          this.direction$.next('rtl');
-        } else {
-          this.direction$.next('ltr');
-        }
-      });
+    // If browser lang does not in supported langs
+    if(!existingLangs.includes(browserLang)) {
+      this.switchLang('en');
+      return;
+    }
   }
 
   private setLocalStorLang(lang: string): void {
     localStorage.setItem('app-lang', lang);
   }
 
-  private getLocalStorLang(): string | null {
-    return localStorage.getItem('app-lang');
+  private getLocalStorLang(): string {
+    return localStorage.getItem('app-lang')!;
   }
 }

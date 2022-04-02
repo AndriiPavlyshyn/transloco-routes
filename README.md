@@ -2,37 +2,10 @@
 
 1. Install transloco `npm i @ngneat/transloco`
 2. Add translate (`app/services/translate-service`) service to your project
-3. In `app.component.html` wrap `<router-outlet>` in wrapper and add `[dir]="dir"`, this param will change direction of app **(rtl or ltr)**
 
 `app.component.html`
 ```
-<div class="page-wrapper" [dir]="dir">
-  <router-outlet></router-outlet>
-</div>
-```
-`app.component.ts`
-```
-private dirSub!: Subscription;
-  public dir!: string ;
-
-  constructor(
-    private cdr: ChangeDetectorRef,
-    private translateService: TranslateService
-  ) { }
-
-  ngAfterViewInit(): void {
-    this.dirSub = this.translateService.direction$
-      .subscribe((dir: string) => {
-        this.dir = dir;
-        this.cdr.detectChanges();
-      })
-  }
-
-  ngOnDestroy(): void {
-    if(this.dirSub) {
-      this.dirSub.unsubscribe();
-    }
-  }
+<router-outlet></router-outlet>
 ```
 
 4. In `app-routing.module.ts`
@@ -41,15 +14,14 @@ private dirSub!: Subscription;
 if you have children routes create const `children`
 ```
 const children: Route[] = [
-  // { path: '', redirectTo: '/detail', pathMatch: 'full' },
   { path: 'test', component: HomeComponent }
 ]
 ```
-Parent routes it's a language keys like `en` or `ru`, `uk` and so one. For children we use our ``children`` const, because it need to be the same. But for example if you don't need some page translate, you can create it's own children routes.
+Parent routes it's a language keys like `en` or `ua`, `uk` and so one. For children we use our ``children`` const, because it almost cases it's the same. But for example if you don't need translate of special page, you can create it's own children routes.
 
 Parent route have to use parent component. **( like a wrapper for all page components )**
 
-If script will not find app language in local storage - it will set english by default.
+**If script will not find app language in local storage - it will set english by default.**
 
 **Routes:**
 
@@ -69,7 +41,7 @@ const routes: Routes = [
 ];
 ```
 
-5. In parent component **( In example it's HomeComponent )** init the `setAppLang(this.route)` methode from `translate-service` where **this.route** is ``ActivatedRoute``
+5. ❗️ In parent component **( In example it's HomeComponent )** init the `setAppLang(this.route)` methode from `translate-service` where **this.route** is ``ActivatedRoute``.
 
 ## Service Methods
 
@@ -77,7 +49,7 @@ const routes: Routes = [
 
 ---
 
-`switchLang(lang: string, route?: string): void`
+`switchLang(lang: string, route?: string): void` - switch language by param ( lang key ) and navigate to the lang route.
 
 **Params**:
 
@@ -94,7 +66,7 @@ const routes: Routes = [
 
 --- 
 
-`setBrowserLang(): void` - set browser's language as app language, if it exists in list of supported languages.
+`getDir(): Direction` - returns app direction **(`ltr` or `rtl`)**.
 
 
 
