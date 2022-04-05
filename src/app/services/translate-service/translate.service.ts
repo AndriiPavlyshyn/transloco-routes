@@ -17,9 +17,7 @@ export class TranslateService {
   constructor(
     private translocoService: TranslocoService,
     private router: Router
-  ) {
-    router.events.subscribe((val) => console.log(val));
-  }
+  ) {}
 
   public setLanguage(lang: string): void {
     this.activeLang$.next(lang);
