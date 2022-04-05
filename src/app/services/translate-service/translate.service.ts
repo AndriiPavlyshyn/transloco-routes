@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { getBrowserLang, TranslocoService } from '@ngneat/transloco';
-import { TranslocoLocaleService } from '@ngneat/transloco-locale';
 import { BehaviorSubject } from 'rxjs';
 
 export type Direction = 'rtl' | 'ltr';
