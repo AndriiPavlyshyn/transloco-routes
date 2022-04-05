@@ -17,7 +17,9 @@ export class TranslateService {
   constructor(
     private translocoService: TranslocoService,
     private router: Router
-  ) {}
+  ) {
+    router.events.subscribe((val) => console.log(val));
+  }
 
   public setLanguage(lang: string): void {
     this.activeLang$.next(lang);
@@ -41,15 +43,8 @@ export class TranslateService {
     const activeLang: string = route.routeConfig?.path!;
 
     if(activeLang === '' || activeLang === 'en') {
-      if(this.storedLang === 'en' || this.storedLang === '') {
-        this.switchLang('en');
-        return;
-      }
-
-      if(this.storedLang !== 'en') {
-        this.switchLang(this.storedLang);
-        return;
-      }
+      this.switchLang('en');
+      return;
     }
 
     if(activeLang !== '') {
