@@ -17,7 +17,6 @@ export class TranslateService {
 
   constructor(
     private translocoService: TranslocoService,
-    private translocoLocale: TranslocoLocaleService,
     private router: Router
   ) {}
 
@@ -29,7 +28,6 @@ export class TranslateService {
 
   public switchLang(lang: string, route?: string): void {
     this.setLanguage(lang);
-    this.translocoLocale.setLocale(lang);
 
     if(route) {
       this.router.navigate([lang, route], { queryParamsHandling: 'preserve' });
@@ -43,23 +41,21 @@ export class TranslateService {
   public setAppLang(route: ActivatedRoute): void {
     const activeLang: string = route.routeConfig?.path!;
 
-    if(activeLang === '') {
-      if(!this.storedLang) {
+    if(activeLang === '' || activeLang === 'en') {
+      if(this.storedLang === 'en' || this.storedLang === '') {
         this.switchLang('en');
         return;
       }
 
-      if(this.storedLang) {
+      if(this.storedLang !== 'en') {
         this.switchLang(this.storedLang);
+        return;
       }
     }
 
     if(activeLang !== '') {
-      if(activeLang) {
-        this.setLanguage(activeLang);
-      } else {
-        this.setStoredLang();
-      }
+      this.switchLang(activeLang);
+      return;
     }
   }
 
